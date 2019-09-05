@@ -3,6 +3,7 @@
              [set :as set]
              [string :as str]]
             [clojure.java.jdbc :as jdbc]
+            [clojure.tools.logging :as log]
             [honeysql
              [core :as hsql]
              [helpers :as h]]
@@ -90,19 +91,21 @@
 ;; workaround for SPARK-9686 Spark Thrift server doesn't return correct JDBC metadata
 (defmethod driver/describe-database :sparksql
   [_ {:keys [details] :as database}]
+  (log/error details)
   {:tables
    (with-open [conn (jdbc/get-connection (sql-jdbc.conn/db->pooled-connection-spec database))]
      (set
-      (for [{:keys [database tablename tab_name]} (jdbc/query {:connection conn} ["show tables"])]
-        {:name   (or tablename tab_name) ; column name differs depending on server (SparkSQL, hive, Impala)
-         :schema (when (seq database)
-                   database)})))})
+      (for [result (jdbc/query {:connection conn} ["show tables"])]
+        (let []
+          (log/error "result" result)
+          {:name   (:name result) ; column name differs depending on server (SparkSQL, hive, Impala)
+           :schema (:dbname details)}))))})
 
 ;; Hive describe table result has commented rows to distinguish partitions
-(defn- valid-describe-table-row? [{:keys [col_name data_type]}]
+(defn- valid-describe-table-row? [{:keys [name type]}]
   (every? (every-pred (complement str/blank?)
                       (complement #(str/starts-with? % "#")))
-          [col_name data_type]))
+          [name type]))
 
 ;; workaround for SPARK-9686 Spark Thrift server doesn't return correct JDBC metadata
 (defmethod driver/describe-table :sparksql
@@ -111,17 +114,13 @@
    :schema schema
    :fields
    (with-open [conn (jdbc/get-connection (sql-jdbc.conn/db->pooled-connection-spec database))]
-     (let [results (jdbc/query {:connection conn} [(format
-                                                    "describe %s"
-                                                    (sql.u/quote-name driver :table
-                                                      (dash-to-underscore schema)
-                                                      (dash-to-underscore table-name)))])]
+     (let [results (jdbc/query {:connection conn} [(format "describe %s.%s" schema table-name)])]
+;(format "describe %s" (sql.u/quote-name driver :table (dash-to-underscore schema) (dash-to-underscore table-name)))])]
        (set
-        (for [{col-name :col_name, data-type :data_type, :as result} results
-              :when                                                  (valid-describe-table-row? result)]
-          {:name          col-name
-           :database-type data-type
-           :base-type     (sql-jdbc.sync/database-type->base-type :hive-like (keyword data-type))}))))})
+        (for [{name :name, type :type, :as result} results]
+          {:name          name
+           :database-type type
+           :base-type     (sql-jdbc.sync/database-type->base-type :hive-like (keyword type))}))))})
 
 ;; we need this because transactions are not supported in Hive 1.2.1
 ;; bound variables are not supported in Spark SQL (maybe not Hive either, haven't checked)
