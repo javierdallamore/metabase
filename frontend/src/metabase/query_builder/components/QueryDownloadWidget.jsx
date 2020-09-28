@@ -16,7 +16,7 @@ import * as Urls from "metabase/lib/urls";
 import _ from "underscore";
 import cx from "classnames";
 
-const EXPORT_FORMATS = ["csv", "xlsx", "json"];
+const EXPORT_FORMATS = Urls.exportFormats;
 
 const QueryDownloadWidget = ({
   className,
@@ -32,7 +32,7 @@ const QueryDownloadWidget = ({
   <PopoverWithTrigger
     triggerElement={
       <Tooltip tooltip={t`Download full results`}>
-        <Icon title={t`Download this data`} name={icon} size={16} />
+        <Icon title={t`Download this data`} name={icon} size={20} />
       </Tooltip>
     }
     triggerClasses={cx(className, "text-brand-hover")}
@@ -154,9 +154,7 @@ const DashboardEmbedQueryButton = ({
 }) => (
   <DownloadButton
     method="GET"
-    url={`api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${
-      card.id
-    }/${type}`}
+    url={`api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${card.id}/${type}`}
     extensions={[type]}
     params={params}
   >

@@ -37,6 +37,7 @@ const colors = {
   "bg-medium": "#EDF2F5",
   "bg-light": "#F9FBFC",
   "bg-white": "#FFFFFF",
+  "bg-yellow": "#FFFCF2",
   shadow: "rgba(0,0,0,0.08)",
   border: "#F0F0F0",
   /* Saturated colors for the SQL editor. Shouldn't be used elsewhere since they're not white-labelable. */
@@ -55,6 +56,7 @@ export const aliases = {
   database: "accent2",
   dashboard: "brand",
   pulse: "accent4",
+  nav: "brand",
 };
 
 export const harmony = [];
@@ -230,18 +232,20 @@ const PREFERRED_COLORS = {
   [colors["accent2"]]: ["average"],
 };
 
-const PREFERRED_COLORS_MAP = new Map();
-for (const [color, keys] of Object.entries(PREFERRED_COLORS)) {
-  // $FlowFixMe
-  for (const key of keys) {
-    PREFERRED_COLORS_MAP.set(key, color);
+const PREFERRED_COLORS_MAP = {};
+for (const color in PREFERRED_COLORS) {
+  if (PREFERRED_COLORS.hasOwnProperty(color)) {
+    const keys = PREFERRED_COLORS[color];
+    for (let i = 0; i < keys.length; i++) {
+      PREFERRED_COLORS_MAP[keys[i]] = color;
+    }
   }
 }
 
 type Key = string;
 
 function getPreferredColor(key: Key) {
-  return PREFERRED_COLORS_MAP.get(key.toLowerCase());
+  return PREFERRED_COLORS_MAP[key.toLowerCase()];
 }
 
 // returns a mapping of deterministically assigned colors to keys, optionally with a fixed value mapping

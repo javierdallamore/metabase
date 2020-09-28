@@ -1,6 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom/extend-expect";
-import { render, fireEvent, cleanup } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 
 import ChartSettings from "metabase/visualizations/components/ChartSettings";
 
@@ -25,8 +25,6 @@ function expectTabSelected(node, value) {
 }
 
 describe("ChartSettings", () => {
-  afterEach(cleanup);
-
   it("should not crash if there are no widgets", () => {
     render(<ChartSettings {...DEFAULT_PROPS} widgets={[]} />);
   });
@@ -102,5 +100,52 @@ describe("ChartSettings", () => {
     );
     expect(getByText("Widget1", { exact: false })).toBeInTheDocument();
     expect(queryByText("Widget2", { exact: false })).toBe(null);
+  });
+
+  it("should show the section picker if there are multiple sections", () => {
+    const { getByText } = render(
+      <ChartSettings
+        {...DEFAULT_PROPS}
+        widgets={[
+          widget({ title: "Widget1", section: "Foo" }),
+          widget({ title: "Widget2", section: "Bar" }),
+        ]}
+      />,
+    );
+    expect(getByText("Foo")).toBeInTheDocument();
+  });
+
+  it("should not show the section picker if there's only one section", () => {
+    const { queryByText } = render(
+      <ChartSettings
+        {...DEFAULT_PROPS}
+        widgets={[
+          widget({ title: "Something", section: "Foo" }),
+          widget({ title: "Other Thing", section: "Foo" }),
+        ]}
+      />,
+    );
+    expect(queryByText("Foo")).toBe(null);
+  });
+
+  it("should not show the section picker if showing a column setting", () => {
+    const columnSettingsWidget = widget({
+      title: "Something",
+      section: "Formatting",
+      hidden: true,
+      id: "column_settings",
+    });
+    const { queryByText } = render(
+      <ChartSettings
+        {...DEFAULT_PROPS}
+        widgets={[
+          widget({ title: "List of columns", section: "Foo", id: "thing" }),
+          widget({ title: "Other Thing", section: "Bar", id: "other_thing" }),
+          columnSettingsWidget,
+        ]}
+        initial={{ widget: columnSettingsWidget }}
+      />,
+    );
+    expect(queryByText("Foo")).toBe(null);
   });
 });

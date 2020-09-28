@@ -39,7 +39,12 @@ export default class Smart extends React.Component {
         ],
         settings,
       ) => [
-        _.find(cols, col => col.name === settings["scalar.field"]) || cols[1],
+        // try and find a selected field setting
+        cols.find(col => col.name === settings["scalar.field"]) ||
+          // fall back to the second column
+          cols[1] ||
+          // but if there's only one column use that
+          cols[0],
       ],
     }),
     "scalar.switch_positive_negative": {
@@ -92,12 +97,6 @@ export default class Smart extends React.Component {
     const lastRow = rows[rows.length - 1];
     const value = lastRow && lastRow[metricIndex];
     const column = cols[metricIndex];
-    const dimensionColumn = cols[dimensionIndex];
-
-    const granularity =
-      dimensionColumn && dimensionColumn.unit
-        ? formatBucketing(dimensionColumn.unit).toLowerCase()
-        : null;
 
     const insights =
       rawSeries && rawSeries[0].data && rawSeries[0].data.insights;
@@ -106,11 +105,12 @@ export default class Smart extends React.Component {
       return null;
     }
 
+    const granularity = formatBucketing(insight["unit"]).toLowerCase();
+
     const lastChange = insight["last-change"];
     const previousValue = insight["previous-value"];
 
-    const change = formatNumber(lastChange * 100);
-    const isNegative = (change && Math.sign(change) < 0) || false;
+    const isNegative = lastChange < 0;
     const isSwapped = settings["scalar.switch_positive_negative"];
 
     // if the number is negative but thats been identified as a good thing (e.g. decreased latency somehow?)
@@ -121,7 +121,9 @@ export default class Smart extends React.Component {
       : color("success");
 
     const changeDisplay = (
-      <span style={{ fontWeight: 900 }}>{Math.abs(change)}%</span>
+      <span style={{ fontWeight: 900 }}>
+        {formatNumber(Math.abs(lastChange), { number_style: "percent" })}
+      </span>
     );
     const separator = (
       <span
@@ -181,15 +183,21 @@ export default class Smart extends React.Component {
           />
         )}
         <Box className="SmartWrapper">
-          {!lastChange || !previousValue ? (
+          {lastChange == null || previousValue == null ? (
             <Box
               className="text-centered text-bold mt1"
               color={color("text-medium")}
             >{jt`Nothing to compare for the previous ${granularity}.`}</Box>
+          ) : lastChange === 0 ? (
+            t`No change from last ${granularity}`
           ) : (
             <Flex align="center" mt={1} flexWrap="wrap">
               <Flex align="center" color={changeColor}>
-                <Icon name={isNegative ? "arrow_down" : "arrow_up"} />
+                <Icon
+                  size={13}
+                  pr={1}
+                  name={isNegative ? "arrow_down" : "arrow_up"}
+                />
                 {changeDisplay}
               </Flex>
               <h4

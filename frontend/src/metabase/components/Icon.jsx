@@ -5,7 +5,7 @@ import RetinaImage from "react-retina-image";
 import styled from "styled-components";
 import { color, space, hover } from "styled-system";
 import cx from "classnames";
-import { color as c, darken } from "metabase/lib/colors";
+import { color as c } from "metabase/lib/colors";
 
 import { loadIcon } from "metabase/icon_paths";
 import { stripLayoutProps } from "metabase/lib/utils";
@@ -29,12 +29,13 @@ export const IconWrapper = styled("div")`
     transform: translateY(-2px);
   }
   ${hover};
+  transition: all 300ms ease-in-out;
 `;
 
 IconWrapper.defaultProps = {
   hover: {
-    backgroundColor: darken(c("brand")),
-    color: "white",
+    backgroundColor: c("bg-medium"),
+    color: c("brand"),
   },
 };
 
@@ -83,12 +84,11 @@ class BaseIcon extends Component {
     delete props.size, props.scale;
 
     if (icon.img) {
+      // avoid passing `role="img"` to an actual image file
+      // eslint-disable-next-line no-unused-vars
+      const { role, ...rest } = props;
       return (
-        <RetinaImage
-          forceOriginalDimensions={false}
-          src={icon.img}
-          {...props}
-        />
+        <RetinaImage forceOriginalDimensions={false} src={icon.img} {...rest} />
       );
     } else if (icon.svg) {
       return <svg {...props} dangerouslySetInnerHTML={{ __html: icon.svg }} />;

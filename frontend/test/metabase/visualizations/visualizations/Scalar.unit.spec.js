@@ -1,5 +1,5 @@
 import React from "react";
-import { render, cleanup } from "@testing-library/react";
+import { render } from "@testing-library/react";
 
 import Scalar from "metabase/visualizations/visualizations/Scalar";
 
@@ -16,8 +16,6 @@ const settings = {
 };
 
 describe("MetricForm", () => {
-  afterEach(cleanup);
-
   it("should render title on dashboards", () => {
     const { getByText } = render(
       <Scalar
@@ -36,7 +34,7 @@ describe("MetricForm", () => {
         series={series(12345)}
         settings={settings}
         visualizationIsClickable={() => false}
-        gridSize={{ width: 3 }}
+        width={230}
       />,
     );
     getByText("12,345"); // with compact formatting, we'd have 1
@@ -48,7 +46,7 @@ describe("MetricForm", () => {
         series={series(12345.6)}
         settings={settings}
         visualizationIsClickable={() => false}
-        gridSize={{ width: 3 }}
+        width={230}
       />,
     );
     getByText("12.3k");

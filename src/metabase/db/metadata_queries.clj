@@ -29,7 +29,7 @@
             (assoc mbql-query :source-table table-id)))
 
 (defn table-row-count
-  "Fetch the row count of TABLE via the query processor."
+  "Fetch the row count of `table` via the query processor."
   [table]
   {:pre  [(map? table)]
    :post [(integer? %)]}
@@ -66,6 +66,7 @@
    This is used to create a `FieldValues` object for `:type/Category` Fields."
   ([field]
    (field-distinct-values field absolute-max-distinct-values-limit))
+
   ([field, max-results :- su/IntGreaterThanZero]
    (mapv first (field-query field {:breakout [[:field-id (u/get-id field)]]
                                    :limit    max-results}))))
@@ -82,14 +83,6 @@
   [field]
   (-> (field-query field {:aggregation [[:count [:field-id (u/get-id field)]]]})
       first first int))
-
-(defn db-id
-  "Return the database ID of a given entity."
-  [x]
-  (or (:db_id x)
-      (:database_id x)
-      (db/select-one-field :db_id 'Table :id (:table_id x))))
-
 
 (def max-sample-rows
   "The maximum number of values we should return when using `table-rows-sample`. This many is probably fine for
